@@ -269,6 +269,21 @@ def main(chrome):
 
 
 class PhimvuCrawler(ImageCrawler):
+    
+
+    def start_search_pipe(self, query):
+        url = f"https://phimvu.blogspot.com/search/label/{query}"
+        # url = f"https://phimvu.blogspot.com/search?q={query}"
+        rep = self.driver.chrome_get(url)
+        html = rep.page_source
+        pat = re.compile(r'<a href="(https://phimvu\.blogspot\.com.+?html)">')
+        mats = pat.findall(html, pos=0)
+        for m in mats:
+            if m in self.url_cache:
+                continue
+            self.crawl_all_images_from_article(m)
+            append_arti_cache(m)
+
 
     def crawl_all_images_from_article(self, article_url, ariticle_title = ''):
         pat0 = re.compile(r'<title>(.*?)</title>', re.S)
@@ -302,7 +317,8 @@ class PhimvuCrawler(ImageCrawler):
 if __name__ == '__main__':
     crawler = PhimvuCrawler()
     crawler.set_writer(FileStorager('output'))
-    crawler.crawl_all_images_from_article("https://phimvu.blogspot.com/2016/12/mfstar-vol076-52p.html")
+    crawler.start_search_pipe('慕羽茜')
+    # crawler.crawl_all_images_from_article("https://phimvu.blogspot.com/2016/12/mfstar-vol076-52p.html")
     # crawler.crawl_all_images_from_article("https://www.baidu.com")
 
 
