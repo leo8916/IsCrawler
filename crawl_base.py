@@ -6,12 +6,14 @@ import time
 import json
 from urllib.parse import urlparse
 
+
+
 class Driver:
 
     def __init__(self):
         self.token = ''
         self.cookies = {}
-        self.proxies = { "http": "socks5://127.0.0.1:1086", "https": "socks5://127.0.0.1:1086"}
+        self.proxies = {}#{ "http": "socks5://127.0.0.1:1086", "https": "socks5://127.0.0.1:1086"}
         self.headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/63.0.3239.132 Safari/537.36'}
         self.chrome = None
         self.load_cookies()
@@ -77,6 +79,7 @@ class Crawler:
         self.driver = Driver()
         self.output = 'output'
         self.url_cache = {}
+        self.arti_cache = {}
 
     def set_writer(self, writer):
         self.writer = writer
@@ -94,6 +97,29 @@ class Crawler:
                 continue
         print(f"Error download:{url}")
         return False   
+    
+    def append_arti_cache(self, arti_link):
+        arti_link = arti_link.strip()
+        if not arti_link:
+            return
+        ac = os.path.join('arti.cache.list')
+        with open(ac, "a") as myfile:
+            myfile.write(f"{arti_link}\n")
+            self.arti_cache[arti_link] = True
+    
+    def append_url_cache(self, urls):
+        ac = os.path.join('url.cache.list')
+        with open(ac, "a") as myfile:
+            for url in urls:
+                url = url.strip()
+                if not url:
+                    continue
+                myfile.write(f"{url}\n") 
+                self.url_cache[url] = True
+
+
+    def htmljsontext_to_json(self, txt):
+        return txt.replace('\\\\', '\\').replace('\\"', '"')
 
 
 class ImageCrawler(Crawler):
