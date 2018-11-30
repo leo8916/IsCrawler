@@ -18,22 +18,29 @@ class BcyCrawler(ImageCrawler):
     '''
     url like https://bcy.net/search/home?k=${SEARCH}
     '''
+    img_index = 0
+
     def start_search_pipe(self, query):
-        url = f"https://bcy.net/search/home?k={query}"
-        rep = self.driver.request_get(url)
-        if rep.status_code != 200:
-            return
-        pat = re.compile(r'<a href="/(item/detail/.*?)" class')
-        html = rep.text
-        bi = html.find('>相关内容<')
-        be = html.find('关于我们')
-        mats = pat.findall(html, pos=bi, endpos=be)
-        for m in mats:
-            m = f'https://bcy.net/{m}'
-            if m in self.arti_cache:
-                continue
-            if self.crawl_all_images_from_article(m):
-                self.append_arti_cache(m)
+        page = 0
+        while True:
+            url = f"https://bcy.net/search/home?k={query}&p={page}"
+            page += 1
+            rep = self.driver.request_get(url)
+            if rep.status_code != 200:
+                return
+            pat = re.compile(r'<a href="/(item/detail/.*?)" class')
+            html = rep.text
+            bi = html.find('>相关内容<')
+            be = html.find('关于我们')
+            mats = pat.findall(html, pos=bi, endpos=be)
+            if not mats:
+                break
+            for m in mats:
+                m = f'https://bcy.net/{m}'
+                if m in self.arti_cache:
+                    continue
+                if self.crawl_all_images_from_article(m, query):
+                    self.append_arti_cache(m)
 
 
     def crawl_all_images_from_article(self, article_url, ariticle_title = ''):
@@ -55,16 +62,15 @@ class BcyCrawler(ImageCrawler):
                 ariticle_title = ariticle_title.replace('/', '_').replace('\\', '_')
             jsd = self.htmljsontext_to_json(pat2.findall(html)[0])
             meta = json.loads(jsd)
-            
             items = meta['detail']['post_data']['multi']
-            idx = 0
+            
             for it in items:
                 m = it['original_path']
                 if m in self.url_cache:
                     continue
-                if self.download(m, name=f"{idx}.jpg", _dir=ariticle_title):
+                if self.download(m, name=f"{BcyCrawler.img_index}.jpg", _dir=ariticle_title):
                     urls.append(m)
-                    idx += 1
+                    BcyCrawler.img_index += 1
                 self.append_url_cache(urls)
 
         except:
